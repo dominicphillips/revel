@@ -64,6 +64,7 @@ func runApp(args []string) {
 	}
 
 	// Else, just build and run the app.
+	err := harness.NewPipeline().Refresh()
 	app, err := harness.Build()
 	if err != nil {
 		errorf("Failed to build app: %s", err)

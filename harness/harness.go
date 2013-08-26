@@ -27,8 +27,9 @@ import (
 )
 
 var (
-	watcher    *revel.Watcher
-	doNotWatch = []string{"tmp", "views", "routes"}
+	watcher      *revel.Watcher
+	assetWatcher *revel.Watcher
+	doNotWatch   = []string{"tmp", "views", "routes"}
 
 	lastRequestHadError int32
 )
@@ -65,6 +66,7 @@ func (hp *Harness) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	atomic.CompareAndSwapInt32(&lastRequestHadError, 1, 0)
+	assetWatcher.Notify()
 
 	// Reverse proxy the request.
 	// (Need special code for websockets, courtesy of bradfitz)
@@ -152,7 +154,12 @@ func (h *Harness) Run() {
 	watcher = revel.NewWatcher()
 	watcher.Listen(h, revel.CodePaths...)
 
+	assetWatcher = revel.NewWatcher()
+	p := NewPipeline()
+	assetWatcher.Listen(p, p.AssetPath)
+
 	go func() {
+
 		addr := fmt.Sprintf("%s:%d", revel.HttpAddr, revel.HttpPort)
 		revel.INFO.Printf("Listening on %s", addr)
 
